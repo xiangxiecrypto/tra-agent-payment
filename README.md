@@ -2,10 +2,71 @@
 
 TRA is a gated payment flow for `USDT` on `Sepolia`.
 
+This repository is designed primarily for `agent-driven execution`.
+
+The intended usage model is that an AI agent receives a business instruction such as `pay 10 usdt with tra`, then automatically runs the full TRA workflow: generate the proof, validate eligibility, and complete or reject the payment. The CLI commands are provided both for direct usage and for agent orchestration.
+
 Before funds are forwarded, the payer must present a valid `Primus zkTLS` attestation proving their `OKX account configuration` satisfies the required `kycLv`. The payment proof is also bound to the exact `beneficiary`, `token`, and `amount`, so it cannot be reused for a different transfer.
+
+This project should be understood as the combination of:
+
+- `Primus zkTLS` for identity and compliance proof generation
+- `Pay Protocol` style enterprise wallet / payment infrastructure for controlled fund release
+
+In other words, TRA brings together verifiable off-chain identity checks and enterprise-grade payment operations in a single agent-friendly flow.
 
 The Primus integration pattern is based on the `primus-zktls-core-sdk` workflow:
 - [primus-zktls-core-sdk](https://github.com/primus-labs/skills/tree/main/primus-zktls-core-sdk)
+
+The enterprise wallet / payment infrastructure context is aligned with:
+- [Pay Protocol Docs](https://doc.payprotocol.network/)
+
+## Quick Start
+
+If you only care about using the product flow, the path is:
+
+1. Configure `.env`
+2. Deploy the TRA contract once
+3. Let the agent or unified CLI run one payment command with the amount you want to send
+
+```bash
+npm install
+cp .env.example .env
+npm run deploy:tra
+npm run tra -- 12.5
+```
+
+What happens when you run `npm run tra -- 12.5`:
+
+- the system checks the payer's OKX account configuration
+- the system generates a proof for this exact payment
+- the contract verifies the proof on-chain
+- the payment is either sent or rejected
+
+In the preferred setup, an agent triggers this command on the user's behalf after understanding a natural-language request.
+
+## Business Flow
+
+```text
+User requests payment
+        |
+        v
+Check OKX KYC eligibility
+        |
+        v
+Generate payment-specific proof
+        |
+        v
+Verify proof on-chain
+        |
+   +----+----+
+   |         |
+   v         v
+Approved   Rejected
+   |         |
+   v         v
+Pay USDT   Refund / no release
+```
 
 ## User Journey
 
@@ -36,7 +97,27 @@ Example:
 npm run tra -- 12.5
 ```
 
+## Why This Exists
+
+This repository is useful when a payment should only be allowed after an identity or compliance check.
+
+Typical business value:
+
+- reduce the risk of sending funds to ineligible users
+- make payment release conditional on a verifiable compliance signal
+- bind compliance proof to a specific transaction, not just to a user in general
+- keep the operational flow simple for end users
+
 ## Architecture
+
+At a high level, the architecture combines two product layers:
+
+1. `Primus`
+   - provides the zkTLS-based proof that the payer satisfies the required account / KYC condition
+
+2. `Pay Protocol style payment infrastructure`
+   - provides the enterprise wallet and controlled payment release model
+   - ensures funds are only released after the proof is validated
 
 The system has three layers:
 
@@ -86,6 +167,46 @@ Create your local config:
 ```bash
 cp .env.example .env
 ```
+
+## Where To Get Credentials
+
+Before this flow can run, you need credentials from both `Primus` and `OKX`.
+
+### Primus
+
+You need:
+
+- `PRIMUS_APP_ID`
+- `PRIMUS_APP_SECRET`
+
+Apply for them at:
+
+- [Primus Developer Portal](https://dev.primuslabs.xyz/)
+
+### OKX
+
+You need:
+
+- `OKX_API_KEY`
+- `OKX_API_SECRET`
+- `OKX_API_PASSPHRASE`
+
+You can get them from:
+
+- [OKX API management page](https://www.okx.com/account/my-api)
+- [OKX API documentation](https://www.okx.com/docs-v5/en/)
+
+For this repository, you should use a `Read`-only OKX API key.
+
+Strong recommendation:
+
+- use a key with `Read` permission only
+- do not use a key with `Trade` permission
+- do not use a key with `Withdraw` permission
+
+This flow only needs to read:
+
+- [OKX Get account configuration](https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-account-configuration)
 
 Important variables:
 
@@ -144,7 +265,7 @@ npm run tra -- <amount>
 
 ## Agent Skill
 
-This repository now includes a project skill for agent-driven usage.
+This repository is built first for agent-driven usage, and it includes a project skill to support that model directly.
 
 The goal is that an agent can understand prompts like:
 
@@ -153,6 +274,13 @@ pay 10 usdt with tra
 ```
 
 and automatically execute the correct TRA workflow.
+
+Manual CLI usage is supported, but the main product idea is:
+
+- the user gives a business instruction
+- the agent interprets it
+- the agent runs the correct guarded payment flow
+- the agent reports progress and outcome back to the user
 
 The skill is intended to:
 - detect TRA payment intents
