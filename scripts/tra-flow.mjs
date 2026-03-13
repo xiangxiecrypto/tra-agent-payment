@@ -3,6 +3,15 @@ import { spawn } from "node:child_process";
 
 const DEFAULT_TRA_CONTRACT_ADDRESS = "0xFBF74694b8450695A382F35448e88bd817fceD26";
 
+function createStageLogger() {
+  const startTime = Date.now();
+
+  return function logStage(message) {
+    const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[+${elapsedSeconds}s] ${message}`);
+  };
+}
+
 function parseArgs(argv) {
   const amount = argv[0];
   const options = {
@@ -50,6 +59,7 @@ function runNodeScript(scriptPath, amount) {
 }
 
 async function main() {
+  const logStage = createStageLogger();
   const { amount, options } = parseArgs(process.argv.slice(2));
 
   if (options.help) {
@@ -65,20 +75,20 @@ async function main() {
     process.env.TRA_CONTRACT_ADDRESS = DEFAULT_TRA_CONTRACT_ADDRESS;
   }
 
-  console.log(`Starting TRA payment flow for amount: ${amount}`);
-  console.log("Checking configuration");
-  console.log(`Using TRA contract: ${process.env.TRA_CONTRACT_ADDRESS}`);
+  logStage(`Starting TRA payment flow for amount: ${amount}`);
+  logStage("Checking configuration");
+  logStage(`Using TRA contract: ${process.env.TRA_CONTRACT_ADDRESS}`);
 
   console.log("");
-  console.log("Generating OKX KYC attestation");
+  logStage("Generating OKX KYC attestation");
   await runNodeScript("scripts/generate-okx-account-config-attestation.mjs", amount.trim());
 
   console.log("");
-  console.log("Running contract preview and payment execution");
+  logStage("Running contract preview and payment execution");
   await runNodeScript("scripts/submit-tra-payment.mjs", amount.trim());
 
   console.log("");
-  console.log("Payment confirmed");
+  logStage("Payment confirmed");
 }
 
 main().catch((error) => {

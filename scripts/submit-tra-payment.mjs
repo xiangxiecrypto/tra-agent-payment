@@ -16,6 +16,15 @@ const ERC20_ABI = [
   "function approve(address spender, uint256 value) returns (bool)",
 ];
 
+function createStageLogger() {
+  const startTime = Date.now();
+
+  return function logStage(message) {
+    const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[+${elapsedSeconds}s] ${message}`);
+  };
+}
+
 function getRequiredEnv(name) {
   const value = process.env[name];
   if (!value || !value.trim()) {
@@ -33,6 +42,7 @@ function parseCliAmount() {
 }
 
 async function main() {
+  const logStage = createStageLogger();
   const rpcUrl = process.env.SEPOLIA_RPC_URL || getRequiredEnv("RPC_URL");
   const privateKey = getRequiredEnv("PRIVATE_KEY");
   const attestationPath = path.resolve(
@@ -47,32 +57,40 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const wallet = new ethers.Wallet(privateKey, provider);
 
+  logStage("Reading attestation artifact");
   const attestation = JSON.parse(await fs.readFile(attestationPath, "utf8"));
   const tra = new ethers.Contract(traContractAddress, TRA_KYC_ESCROW_ABI, wallet);
   const token = new ethers.Contract(tokenAddress, ERC20_ABI, wallet);
 
+  logStage("Resolving token decimals");
   const decimals = await token.decimals();
   const amount = ethers.parseUnits(amountInput, decimals);
 
-  console.log("Running contract preview");
+  logStage("Running contract preview");
   const [ok, reason] = await tra.previewPayment(attestation, wallet.address, amount);
   if (!ok) {
     throw new Error(`Attestation rejected by contract preview: ${reason}`);
   }
 
+  logStage("Preview passed, checking token allowance");
   const allowance = await token.allowance(wallet.address, traContractAddress);
   if (allowance < amount) {
-    console.log("Submitting token approval");
+    logStage("Submitting token approval");
     const approvalTx = await token.approve(traContractAddress, amount);
     console.log(`Approval submitted: ${approvalTx.hash}`);
+    logStage("Waiting for approval confirmation");
     await approvalTx.wait();
+    logStage("Approval confirmed");
+  } else {
+    logStage("Existing allowance is sufficient, skipping approval");
   }
 
-  console.log("Sending payment transaction");
+  logStage("Sending payment transaction");
   const tx = await tra.payWithOkxKyc(attestation, amount);
   console.log(`Payment tx submitted: ${tx.hash}`);
+  logStage("Waiting for payment confirmation");
   const receipt = await tx.wait();
-  console.log(`Payment confirmed in block: ${receipt.blockNumber}`);
+  logStage(`Payment confirmed in block: ${receipt.blockNumber}`);
 }
 
 main().catch((error) => {

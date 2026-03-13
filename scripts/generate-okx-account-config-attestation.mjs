@@ -10,6 +10,15 @@ const OKX_ACCOUNT_CONFIG_PATH = "/api/v5/account/config";
 const OKX_ACCOUNT_CONFIG_URL = `${OKX_BASE_URL}${OKX_ACCOUNT_CONFIG_PATH}`;
 const ERC20_ABI = ["function decimals() view returns (uint8)"];
 
+function createStageLogger() {
+  const startTime = Date.now();
+
+  return function logStage(message) {
+    const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[+${elapsedSeconds}s] ${message}`);
+  };
+}
+
 function getRequiredEnv(name) {
   const value = process.env[name];
   if (!value || !value.trim()) {
@@ -34,6 +43,7 @@ function parseCliAmount() {
 }
 
 async function main() {
+  const logStage = createStageLogger();
   const appId = getRequiredEnv("PRIMUS_APP_ID");
   const appSecret = getRequiredEnv("PRIMUS_APP_SECRET");
   const privateKey = getRequiredEnv("PRIVATE_KEY");
@@ -54,10 +64,11 @@ async function main() {
   );
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const token = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+  logStage("Resolving token decimals");
   const decimals = await token.decimals();
   const amount = ethers.parseUnits(amountInput, decimals);
 
-  console.log("Starting OKX KYC attestation request");
+  logStage("Preparing OKX KYC attestation request");
 
   const timestamp = new Date().toISOString();
   const signature = signOkxRequest({
@@ -81,6 +92,7 @@ async function main() {
   }
 
   const zkTls = new PrimusCoreTLS();
+  logStage("Initializing Primus zkTLS client");
   await zkTls.init(appId, appSecret, "auto");
 
   const request = {
@@ -114,23 +126,26 @@ async function main() {
     }),
   );
 
+  logStage("Requesting attestation from Primus, this can take up to 2 minutes");
   const attestation = await zkTls.startAttestation(attRequest, 2 * 60 * 1000);
+  logStage("Attestation received, verifying locally");
   const localVerifyOk = zkTls.verifyAttestation(attestation);
   if (!localVerifyOk) {
     throw new Error("Local Primus verification failed");
   }
 
+  logStage("Saving attestation artifact");
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(attestation, null, 2)}\n`, "utf8");
 
-  console.log("OKX KYC attestation generated");
-  console.log(`- recipient: ${recipient}`);
-  console.log(`- url: ${OKX_ACCOUNT_CONFIG_URL}`);
-  console.log(`- kycPath: ${okxKycPath}`);
-  console.log(`- beneficiary: ${beneficiary}`);
-  console.log(`- token: ${tokenAddress}`);
-  console.log(`- amount: ${amountInput} (${amount.toString()} base units)`);
-  console.log(`- output: ${outputPath}`);
+  logStage("OKX KYC attestation generated");
+  console.log(`recipient: ${recipient}`);
+  console.log(`url: ${OKX_ACCOUNT_CONFIG_URL}`);
+  console.log(`kycPath: ${okxKycPath}`);
+  console.log(`beneficiary: ${beneficiary}`);
+  console.log(`token: ${tokenAddress}`);
+  console.log(`amount: ${amountInput} (${amount.toString()} base units)`);
+  console.log(`output: ${outputPath}`);
 }
 
 main().catch((error) => {
