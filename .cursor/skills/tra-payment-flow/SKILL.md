@@ -12,11 +12,11 @@ Use this skill for the repository's guarded TRA payment flow.
 This skill handles the full payment path:
 
 1. Ensure the project is compiled
-2. Ensure a TRA contract is deployed
+2. Use the default deployed TRA contract on Sepolia
 3. Generate an OKX account-config attestation for the requested amount
 4. Run contract preview and token approval
 5. Execute `payWithOkxKyc`
-6. Return the deployed contract address and transaction hashes
+6. Return the contract address used and transaction hashes
 
 ## Trigger Phrases
 
@@ -69,13 +69,16 @@ When asking the user to configure `.env`, prefer a short actionable format like:
 
 ### 2. Deployment handling
 
-- If `TRA_CONTRACT_ADDRESS` is empty, deploy first with:
+- The default Sepolia TRA contract is:
 
-```bash
-npm run deploy:tra
+```text
+0xFBF74694b8450695A382F35448e88bd817fceD26
 ```
 
-- If the contract logic changed in this conversation and the new logic must be used, redeploy and update `.env`
+- If `TRA_CONTRACT_ADDRESS` is empty, use the default address above
+- Do not redeploy automatically
+- Only deploy a new contract if the user explicitly asks for deployment
+- If the contract logic changed in this conversation and the user explicitly wants to use the new logic on-chain, explain that deployment is required before running the payment flow
 
 ### 3. Preferred command
 
@@ -128,7 +131,7 @@ Preferred status messages:
 
 - `Starting TRA payment flow`
 - `Checking configuration`
-- `Deploying TRA contract`
+- `Using default TRA contract`
 - `Generating OKX KYC attestation`
 - `Running contract preview`
 - `Submitting token approval`

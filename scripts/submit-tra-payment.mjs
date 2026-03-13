@@ -3,6 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ethers } from "ethers";
 
+const DEFAULT_TRA_CONTRACT_ADDRESS = "0xFBF74694b8450695A382F35448e88bd817fceD26";
+
 const TRA_KYC_ESCROW_ABI = [
   "function previewPayment((address recipient,(string url,string header,string method,string body) request,(string keyName,string parseType,string parsePath)[] reponseResolve,string data,string attConditions,uint64 timestamp,string additionParams,(address attestorAddr,string url)[] attestors,bytes[] signatures) attestation,address payer,uint256 amount) view returns (bool ok, string reason)",
   "function payWithOkxKyc((address recipient,(string url,string header,string method,string body) request,(string keyName,string parseType,string parsePath)[] reponseResolve,string data,string attConditions,uint64 timestamp,string additionParams,(address attestorAddr,string url)[] attestors,bytes[] signatures) attestation,uint256 amount) returns (bool forwarded, string reason)",
@@ -37,7 +39,8 @@ async function main() {
     process.cwd(),
     process.env.ATTESTATION_OUTPUT_PATH || "artifacts/okx-account-config-attestation.json",
   );
-  const traContractAddress = getRequiredEnv("TRA_CONTRACT_ADDRESS");
+  const traContractAddress =
+    process.env.TRA_CONTRACT_ADDRESS?.trim() || DEFAULT_TRA_CONTRACT_ADDRESS;
   const tokenAddress = getRequiredEnv("TOKEN_ADDRESS");
   const amountInput = parseCliAmount();
 

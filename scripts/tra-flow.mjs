@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { spawn } from "node:child_process";
 
+const DEFAULT_TRA_CONTRACT_ADDRESS = "0xFBF74694b8450695A382F35448e88bd817fceD26";
+
 function parseArgs(argv) {
   const amount = argv[0];
   const options = {
@@ -26,7 +28,7 @@ function printHelp() {
   console.log("  4. Send payment transaction");
   console.log("");
   console.log("Note:");
-  console.log("  Deploy the TRA contract first with: npm run deploy:tra");
+  console.log(`  Uses the default Sepolia TRA contract: ${DEFAULT_TRA_CONTRACT_ADDRESS}`);
 }
 
 function runNodeScript(scriptPath, amount) {
@@ -60,11 +62,12 @@ async function main() {
   }
 
   if (!process.env.TRA_CONTRACT_ADDRESS || !process.env.TRA_CONTRACT_ADDRESS.trim()) {
-    throw new Error("Missing TRA_CONTRACT_ADDRESS. Deploy first with: npm run deploy:tra");
+    process.env.TRA_CONTRACT_ADDRESS = DEFAULT_TRA_CONTRACT_ADDRESS;
   }
 
   console.log(`Starting TRA payment flow for amount: ${amount}`);
   console.log("Checking configuration");
+  console.log(`Using TRA contract: ${process.env.TRA_CONTRACT_ADDRESS}`);
 
   console.log("");
   console.log("Generating OKX KYC attestation");

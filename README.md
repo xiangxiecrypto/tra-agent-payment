@@ -26,15 +26,18 @@ The enterprise wallet / payment infrastructure context is aligned with:
 If you only care about using the product flow, the path is:
 
 1. Configure `.env`
-2. Deploy the TRA contract once
+2. Use the default Sepolia `TRA` contract
 3. Let the agent or unified CLI run one payment command with the amount you want to send
 
 ```bash
 npm install
 cp .env.example .env
-npm run deploy:tra
 npm run tra -- 12.5
 ```
+
+Default Sepolia `TRA` contract:
+
+`0xFBF74694b8450695A382F35448e88bd817fceD26`
 
 What happens when you run `npm run tra -- 12.5`:
 
@@ -220,7 +223,7 @@ Important variables:
 - `OKX_API_SECRET`
 - `OKX_API_PASSPHRASE`
 - `MIN_OKX_KYC_LEVEL`: Minimum accepted KYC level, default `2`
-- `TRA_CONTRACT_ADDRESS`: Deployed TRA contract address
+- `TRA_CONTRACT_ADDRESS`: TRA contract address to use. Defaults to `0xFBF74694b8450695A382F35448e88bd817fceD26` on Sepolia
 
 Reference:
 - [OKX Get account configuration](https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-account-configuration)
@@ -239,7 +242,7 @@ Run tests:
 npm run test
 ```
 
-Deploy the latest TRA contract:
+Deploy a new TRA contract manually only if you explicitly want a fresh deployment:
 
 ```bash
 npm run deploy:tra
@@ -285,10 +288,12 @@ Manual CLI usage is supported, but the main product idea is:
 The skill is intended to:
 - detect TRA payment intents
 - extract the requested amount
-- deploy the contract if needed
+- use the default deployed TRA contract by default
 - run the unified flow command
 - print progress status during execution
 - report the transaction result back to the user
+
+Unless the user explicitly asks for a new deployment, the agent should not redeploy the contract.
 
 If required `.env` values are missing, the agent should also show direct links for where to get them, instead of making the user search manually:
 
