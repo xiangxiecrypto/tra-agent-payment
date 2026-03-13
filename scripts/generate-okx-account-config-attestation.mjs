@@ -36,7 +36,8 @@ function parseCliAmount() {
 async function main() {
   const appId = getRequiredEnv("PRIMUS_APP_ID");
   const appSecret = getRequiredEnv("PRIMUS_APP_SECRET");
-  const recipient = getRequiredEnv("EXPECTED_FROM_ADDRESS");
+  const privateKey = getRequiredEnv("PRIVATE_KEY");
+  const recipient = new ethers.Wallet(privateKey).address;
   const rpcUrl = process.env.SEPOLIA_RPC_URL || getRequiredEnv("RPC_URL");
   const tokenAddress = getRequiredEnv("TOKEN_ADDRESS");
   const beneficiary = getRequiredEnv("TRA_BENEFICIARY");

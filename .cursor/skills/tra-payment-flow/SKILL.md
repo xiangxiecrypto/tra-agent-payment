@@ -33,7 +33,6 @@ Apply this skill when the user says things like:
 Before running the flow, confirm that `.env` contains:
 
 - `PRIVATE_KEY`
-- `EXPECTED_FROM_ADDRESS`
 - `TOKEN_ADDRESS`
 - `PRIMUS_APP_ID`
 - `PRIMUS_APP_SECRET`
@@ -42,6 +41,23 @@ Before running the flow, confirm that `.env` contains:
 - `OKX_API_PASSPHRASE`
 
 If any of these are missing, ask the user to provide them.
+
+The payer address is derived automatically from `PRIVATE_KEY`; the user does not need to provide it separately.
+
+If `.env` is missing required values, do not only say what is missing. Also include direct links so the user can go straight to the right place without searching.
+
+Use these links when prompting for missing credentials:
+
+- `PRIMUS_APP_ID` / `PRIMUS_APP_SECRET`
+  - [Primus Developer Portal](https://dev.primuslabs.xyz/)
+- `OKX_API_KEY` / `OKX_API_SECRET` / `OKX_API_PASSPHRASE`
+  - [OKX API management page](https://www.okx.com/account/my-api)
+  - [OKX API documentation](https://www.okx.com/docs-v5/en/)
+
+When asking the user to configure `.env`, prefer a short actionable format like:
+
+- `Missing PRIMUS_APP_ID and PRIMUS_APP_SECRET. Get them here: https://dev.primuslabs.xyz/`
+- `Missing OKX API credentials. Create a Read-only OKX API key here: https://www.okx.com/account/my-api`
 
 ## Execution Rules
 

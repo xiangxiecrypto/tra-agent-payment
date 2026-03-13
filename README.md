@@ -211,7 +211,7 @@ This flow only needs to read:
 Important variables:
 
 - `PRIVATE_KEY`: Payer wallet private key
-- `EXPECTED_FROM_ADDRESS`: Expected sender address derived from the private key
+- the payer address is derived automatically from `PRIVATE_KEY`
 - `TOKEN_ADDRESS`: Sepolia USDT contract
 - `TRA_BENEFICIARY`: Recipient address
 - `PRIMUS_APP_ID`
@@ -289,6 +289,11 @@ The skill is intended to:
 - run the unified flow command
 - print progress status during execution
 - report the transaction result back to the user
+
+If required `.env` values are missing, the agent should also show direct links for where to get them, instead of making the user search manually:
+
+- Primus credentials: [https://dev.primuslabs.xyz/](https://dev.primuslabs.xyz/)
+- OKX API credentials: [https://www.okx.com/account/my-api](https://www.okx.com/account/my-api)
 
 Recommended status updates for agent execution:
 
